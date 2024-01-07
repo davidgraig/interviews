@@ -1,0 +1,175 @@
+# Technical Interview Template - Database
+
+```elixir
+# Dependencies
+Mix.install([
+  {:heap, "~> 3.0"},
+  {:libgraph, "~> 0.16.0"},
+  # visualizations for Livebooks
+  {:kino, "~> 0.11.0"},
+  # http request library
+  {:req, "~> 0.4.4"},
+  # Repository data mapper
+  {:ecto, "~> 3.10"},
+  # GraphQL library
+  {:absinthe, "~> 1.7"},
+  {:kino_db, "~> 0.2.3"},
+  {:postgrex, ">= 0.0.0"},
+  {:ecto_sql, "~> 3.10"}
+])
+
+# Test Framework
+ExUnit.start(autorun: false)
+```
+
+## Requirements
+
+### Story:
+
+>
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Questions / Clarifications
+
+*
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Approach
+
+1.
+
+## Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    %{
+      example: %{}
+    }
+  end
+end
+```
+
+## Database Setup
+
+<!-- livebook:{"attrs":{"database":"postgres","hostname":"localhost","password_secret":"PG_PASSWORD","port":5432,"type":"postgres","use_ipv6":false,"use_ssl":false,"username":"daverussell","variable":"conn"},"chunks":null,"kind":"Elixir.KinoDB.ConnectionCell","livebook_object":"smart_cell"} -->
+
+```elixir
+opts = [
+  hostname: "localhost",
+  port: 5432,
+  username: "daverussell",
+  password: System.fetch_env!("LB_PG_PASSWORD"),
+  database: "postgres"
+]
+
+{:ok, conn} = Kino.start_child({Postgrex, opts})
+```
+
+```elixir
+defmodule Repo do
+  use Ecto.Repo, otp_app: :my_app, adapter: Ecto.Adapters.Postgres
+end
+
+Kino.start_child({Repo, url: "postgres://postgres:postgres@localhost/postgres"})
+```
+
+```elixir
+defmodule Migrations.Tables do
+  use Ecto.Migration
+
+  def up do
+    create table("users") do
+      timestamps()
+    end
+
+    create table("weather") do
+      add(:city, :string, size: 40)
+      add(:temp_lo, :integer)
+      add(:temp_hi, :integer)
+      add(:prcp, :float)
+
+      timestamps()
+    end
+  end
+
+  def down do
+    drop(table("weather"))
+    drop(table("users"))
+  end
+end
+
+Ecto.Migrator.down(Repo, 1, Migrations.Tables)
+Ecto.Migrator.up(Repo, 1, Migrations.Tables)
+```
+
+```elixir
+defmodule Weather do
+  use Ecto.Schema
+
+  schema "weather" do
+    field(:city, :string)
+    field(:temp_lo, :integer)
+    field(:temp_hi, :integer)
+    field(:prcp, :float, default: 0.0)
+
+    timestamps()
+  end
+end
+```
+
+## Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def run() do
+    weather = %Weather{temp_lo: 0, temp_hi: 23}
+    Repo.insert!(weather)
+  end
+end
+```
+
+```elixir
+Repo.all(Weather)
+|> Kino.DataTable.new()
+```
+
+## Testing
+
+```elixir
+defmodule Test.Assignment do
+  import Assignment
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.run/1" do
+    test "it works" do
+      assert %Kino.JS.Live{} = run()
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+## Retrospective
+
+### Timeline
+
+| Start Time | End Time | Total Time |
+| ---------- | -------- | ---------- |
+| ???        | ???      | 1:50       |
+
+### Results / Feedback
+
+*
+
+<!-- livebook:{"offset":2977,"stamp":{"token":"XCP.fvMAk6O0DNp6sj_pub245YtyO-XrIcPJf8wUGzAWSJnnPxbR1NRLBUkd4XQUnIlznAU1u5NzAndtMNJVReyJkcwM9IdLJuqEqe6kG4Uwh0WOVxgiKtk","version":2}} -->

@@ -1,0 +1,168 @@
+# Machine Learning in Elixir
+
+```elixir
+Mix.install([
+  # create/train models/neural networks
+  {:axon, "~> 0.5"},
+  # elixir ML foundation library
+  {:nx, "~> 0.5"},
+  # work with DataFrames (tables)
+  {:explorer, "~> 0.5"},
+  # Livebook visualizations
+  {:kino, "~> 0.11.0"}
+])
+```
+
+## Make Machines That Learn
+
+### Learning With Elixir
+
+Explorer DataFrame queries API includes a number of convenience macros, it's encouraged to use them
+
+##### Terms
+
+* _model_: a function.
+* _tensor_: a multi-dimensional array
+* _DataFrame_: tabular (i.e. 2D) data structures
+* _one-hot encoding_: A binary and lossy way of encoding a column that includes all the other columns.
+* _x_: commonly indicates model features, e.g. `x_train` (🙄, why not just prefix with `model_`?)
+
+```elixir
+require Explorer.DataFrame, as: DF
+```
+
+#### Working with Data
+
+We're using sample data included in the Explorer library, let's retrieve it.
+
+```elixir
+iris = Explorer.Datasets.iris()
+```
+
+##### On Polars
+
+🤔 what is a `Polar`? The book says:
+
+> the `DataFrame` has 150 rows (examples) by 5 (features).
+
+`Polars` are data structures backed by a Rust library that is a port of the Pything ML library that is named Polars (a replacement for the slower "Pandas" library... 🤦 developer's naming things, yeesh)
+
+> read more [here](https://github.com/elixir-explorer/explorer#features-and-design)
+
+##### Things you could do with DataFrames
+
+neat Visualizations (with Kino?)
+apply operations on a Series (the set of Examples)
+
+##### Things we will do DataFrames
+
+transform the data into an appropriate scale
+[0, 1]
+z-score/standardization (highlight outliers)
+we'll pick standardization, although both are good(?)
+subtract the mean from the value, and divide by the variance
+
+<!-- livebook:{"break_markdown":true} -->
+
+#### Preparing the Data for Training
+
+Normalize the series in the DataFrame, but exclude species. For species, we'll formalize/cast it as a categorical feature, so that we can easily convert the DataFrame into a tensor.
+
+```elixir
+feature_columns = ~w(sepal_width sepal_length petal_length petal_width)
+
+normalized_iris =
+  DF.mutate(
+    iris,
+    for column <- across(^feature_columns) do
+      {column.name, (column - mean(column)) / variance(column)}
+    end
+  )
+
+normalized_iris = DF.mutate(normalized_iris, species: Explorer.Series.cast(species, :category))
+shuffled_normalized_iris = DF.shuffle(normalized_iris)
+
+# Dave's refactor:
+#
+# feature_columns = Enum.filter(iris.names, fn (col) -> col != "species" end)
+# normalized_iris = iris
+#   |> DF.mutate(for column <- across(^feature_columns) do
+#     {column.name, (column - mean(column)) / variance(column)}
+#   end)
+#   |> DF.mutate([species: Explorer.Series.cast(species, :category)])
+#   |> DF.shuffle()
+```
+
+##### Splitting into Train and Test Sets
+
+It's important to measure the performance of the model data it hasn't seen. We'll slice out some data from the DataFrame for this purpose (i.e. a `Holdout Set`)
+
+```elixir
+train_df = DF.slice(shuffled_normalized_iris, 0..119)
+test_df = DF.slice(shuffled_normalized_iris, 120..149)
+```
+
+##### Preparing Data for Training
+
+`Nx.Tensor` is used for all the different modules that make up the `Nx` library, so we need to convert from a `DataFrame` to a `Tensor`.  In particular, the values of the categorical data are `string` but we need them represented as _one-hot encoding_
+
+```elixir
+x_train = Nx.stack(train_df[feature_columns], axis: -1)
+
+y_train =
+  train_df["species"]
+  |> Nx.stack(axis: -1)
+  |> Nx.equal(Nx.iota({1, 3}, axis: -1))
+
+x_test = Nx.stack(test_df[feature_columns], axis: -1)
+
+y_test =
+  test_df["species"]
+  |> Nx.stack(axis: -1)
+  |> Nx.equal(Nx.iota({1, 3}, axis: -1))
+
+# Dave Refactor:
+
+# defmodule Helpers do
+#   def stack columns do
+#     columns
+#       |> Nx.stack(axis: -1)
+#   end
+
+#   def equal tensor do
+#     tensor
+#       |> Nx.equal(Nx.iota({1, 3}, axis: -1))
+#   end  
+# end
+
+# x_train = train_df[feature_columns] |> Helpers.stack
+# y_train = train_df["species"] 
+#   |> Helpers.stack 
+#   |> Helpers.equal
+
+# x_test = test_df[feature_columns] |> Helpers.stack
+# y_test = test_df["species"] 
+#   |> Helpers.stack 
+#   |> Helpers.equal
+```
+
+#### Multinomial Logistic Regression with Axon
+
+Axon training, in 3 steps:
+
+1. Define the model
+2. Create an input pipeline
+3. Declare and run the _training loop_`
+
+         ##### Defining the Model
+
+      ```elixir
+      model =
+        Axon.input("iris_features", shape: {nil, 4})
+        |> Axon.dense(3, activation: :softmax)
+
+      # how is this useful 🫤mm
+      Axon.Display.as_graph(model, Nx.template({1, 4}, :f32))
+      ```
+
+      ##### Declaring the Input Pipeline

@@ -1,0 +1,124 @@
+# Stripe Interview Prep 1
+
+```elixir
+Mix.install([
+  {:heap, "~> 2.0"}
+])
+
+ExUnit.start(autorun: false)
+```
+
+## Assignment
+
+#### Requirements and Clarifications
+
+Print all nodes less than a given value x from the min-heap.
+
+#### Approaches
+
+1. Pop until root > x, print popped values
+   1. O(n*logn)
+
+###
+
+<!-- livebook:{"break_markdown":true} -->
+
+#### Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+require Heap
+
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    example =
+      30..2//-2
+      |> Enum.shuffle()
+      |> Enum.to_list()
+      |> Enum.reduce(Heap.min(), fn i, acc ->
+        Heap.push(acc, i)
+      end)
+
+    %{
+      example: example
+    }
+  end
+end
+```
+
+#### Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def run(heap, needle) do
+    Enum.reduce_while(
+      1..Heap.size(heap),
+      %{heap: heap, result: []},
+      fn _, acc ->
+        %{heap: heap, result: result} = acc
+        {root, rest} = Heap.split(heap)
+        if root < needle, do: {:cont, %{heap: rest, result: [root | result]}}, else: {:halt, acc}
+      end
+    ).result
+  end
+end
+```
+
+#### Testing
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Test.Assigment do
+  import Assignment
+
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.run/2" do
+    test "works", %{example: example} do
+      assert run(example, 27) == [26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2]
+    end
+
+    test "equal values" do
+    end
+
+    test "single value" do
+    end
+
+    test "incomparable values" do
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+##### Retrospective
+
+###### Timeline
+
+| Start Time | End Time | Total Time |
+| ---------- | -------- | ---------- |
+| 12:26      | 2:16     | 1:50       |
+
+###### Results
+
+* over 2x longer than it should take:
+  * Had to review Heap datastructure
+  * Heap library not included
+  * took a long time to scroll up and down from test to implementation.
+* Didn't talk about approach, design, etc.
+  * forgot to include it
+
+###### Actions
+
+1. update template to include Design, and Approach in requirements section (won't forget that way)
+2. look up Hex packages for common datastructures include them in template setup
+3. Transcribe Best practices for tech interview to checklist.
+4. Try again with Test above Implementation?

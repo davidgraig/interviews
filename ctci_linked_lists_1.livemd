@@ -1,0 +1,127 @@
+# CtCi: Linked Lists 1
+
+```elixir
+# Dependencies
+Mix.install([
+  {:heap, "~> 3.0"},
+  # visualizations for Livebooks
+  {:kino, "~> 0.11.0"},
+  # http request library
+  {:req, "~> 0.4.4"},
+  # Repository data mapper
+  {:ecto, "~> 3.10"},
+  # GraphQL library
+  {:absinthe, "~> 1.7"}
+])
+
+# Test Framework
+ExUnit.start(autorun: false)
+```
+
+## Requirements
+
+### Story:
+
+> Write code to remove duplicates from an unsorted linked list, without a temporary buffer
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Questions / Clarifications
+
+*
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Approach
+
+#### Brute Force
+
+1. walk through linked list, for each node, check buffer
+2. if already in buffer, continue, else add to buffer
+3. convert buffer to linked list.
+
+depending on the buffer, this could be O(nlogn): n to walk the list, if the buffer is a map then, logn for the buffer operations
+
+#### no buffer
+
+1. for each node, search the rest of the list for duplicates. if found, remove them. continue
+2. this implies that for each node, we walk the list, this is O(n^2)
+
+## Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    %{
+      example: [1, 3, 2, 2, 1, 5, 4],
+      empty: [],
+      nothing: nil,
+      strings: ["a", "b", "a", "c", "d"]
+    }
+  end
+end
+```
+
+## Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def run(list) when not is_nil(list) do
+    list
+    |> MapSet.new()
+    |> Enum.to_list()
+  end
+end
+```
+
+## Testing
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Test.Assignment do
+  import Assignment
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.run/1" do
+    test "it works", %{example: example} do
+      assert run(example) == [1, 2, 3, 4, 5]
+    end
+
+    test "empty lists return the empty list", %{empty: empty} do
+      assert run(empty) == []
+    end
+
+    test "nil throws an error", %{nothing: nothing} do
+      assert_raise FunctionClauseError, "no function clause matching in Assignment.run/1", fn ->
+        run(nothing)
+      end
+    end
+
+    test "strings work too", %{strings: strings} do
+      assert run(strings) == ["a", "b", "c", "d"]
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+## Retrospective
+
+### Timeline
+
+| Start Time | End Time | Total Time |
+| ---------- | -------- | ---------- |
+| ???        | ???      | 1:50       |
+
+### Results / Feedback
+
+*

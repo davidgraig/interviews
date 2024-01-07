@@ -1,0 +1,104 @@
+# Technical Interview Template
+
+```elixir
+# Dependencies
+Mix.install([
+  {:heap, "~> 3.0"},
+  {:libgraph, "~> 0.16.0"},
+  # visualizations for Livebooks
+  {:kino, "~> 0.11.0"},
+  # http request library
+  {:req, "~> 0.4.4"},
+  # Repository data mapper
+  {:ecto, "~> 3.10"},
+  # GraphQL library
+  {:absinthe, "~> 1.7"}
+])
+
+# Test Framework
+ExUnit.start(autorun: false)
+```
+
+## Requirements
+
+### Story:
+
+>
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Questions / Clarifications
+
+*
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Approach
+
+1.
+
+## Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    %{
+      example: %{}
+    }
+  end
+end
+```
+
+## Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def run(input) when not is_nil(input) do
+    %{}
+  end
+end
+```
+
+## Testing
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Test.Assignment do
+  import Assignment
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.run/1" do
+    test "it works", %{example: example} do
+      assert run(example) == example
+    end
+
+    test "nil throws an error" do
+      assert_raise FunctionClauseError, "no function clause matching in Assignment.run/1", fn ->
+        run(nil)
+      end
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+## Retrospective
+
+### Timeline
+
+| Start Time | End Time | Total Time |
+| ---------- | -------- | ---------- |
+| ???        | ???      | 1:50       |
+
+### Results / Feedback
+
+*

@@ -1,0 +1,133 @@
+# Stripe Interview
+
+```elixir
+# Dependencies
+Mix.install([
+  {:heap, "~> 3.0"},
+  {:libgraph, "~> 0.16.0"},
+  # visualizations for Livebooks
+  {:kino, "~> 0.11.0"},
+  # http request library
+  {:req, "~> 0.4.4"},
+  # Repository data mapper
+  {:ecto, "~> 3.10"},
+  # GraphQL library
+  {:absinthe, "~> 1.7"},
+  {:jason, "~> 1.4"}
+])
+
+# Test Framework
+ExUnit.start(autorun: false)
+```
+
+## Requirements
+
+### Assignment:
+
+> Given a list of `Users` and a list of `Features`, implement a function `get_user_features` that will return the feature id's for a user. Note that `locations` property and `abTest` property may be absent
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Questions / Clarifications
+
+*
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Approach
+
+1. for a user's location `l`, get the set of features whos location array includes `l`, or where the features location is empty/absent
+2. for a user's id, if id is even, get the set of features which include property `abTest` true, or `abTest` is absent.
+3. return union of those two sets.
+
+## Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    users = ~s(
+      [
+          { "id": 0, "name": "eva",    "location": "US" },
+          { "id": 1, "name": "tess",   "location": "US" },
+          { "id": 2, "name": "rahool", "location": "CA" },
+          { "id": 3, "name": "amanda", "location": "CA" }
+      ])
+    features = ~s(
+      [
+        {
+          "id": "annual_sale",
+          "locations": ["US"],
+          "abTest": true
+        },
+        {
+            "id": "enhanced_comments",
+            "abTest": true
+        },
+        {
+            "id": "canada_promotion",
+            "locations": ["CA"]
+        }
+      ])
+
+    %{
+      users: Jason.decode!(users, keys: :atoms),
+      features: Jason.decode!(features, keys: :atoms)
+    }
+  end
+end
+```
+
+## Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def get_user_features(user, features) when not is_nil(user) and not is_nil(features) do
+    features
+    |> Enum.reduce([], fn feature, matches ->
+      [include_feature?(user.location, feature) | matches]
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp include_feature?(location, %{id: id, locations: locations}) do
+    if Enum.member?(locations, location), do: id
+  end
+
+  defp include_feature?(_, %{id: id, abTest: true}), do: id
+end
+```
+
+## Testing
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Test.Assignment do
+  import Assignment
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.get_user_features/2" do
+    test "returns feature ids for a user", %{users: users, features: features} do
+      eva = Enum.at(users, 0)
+      assert get_user_features(eva, features) == ["enhanced_comments", "annual_sale"]
+    end
+
+    test "nil throws an error" do
+      assert_raise FunctionClauseError,
+                   "no function clause matching in Assignment.get_user_features/2",
+                   fn ->
+                     get_user_features(nil, nil)
+                   end
+    end
+  end
+end
+
+ExUnit.run()
+```

@@ -1,0 +1,141 @@
+# CtCi: Arrays and Strings 1 - HashMap
+
+```elixir
+# Dependencies
+Mix.install([
+  {:heap, "~> 3.0"},
+  # visualizations for Livebooks
+  {:kino, "~> 0.11.0"},
+  # http request library
+  {:req, "~> 0.4.4"},
+  # Repository data mapper
+  {:ecto, "~> 3.10"},
+  # GraphQL library
+  {:absinthe, "~> 1.7"}
+])
+
+# Test Framework
+ExUnit.start(autorun: false)
+```
+
+## Requirements
+
+### Story:
+
+> Implement an algorithm to determine if a string has all unique characters. What if you cannot use additional data structures?
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Questions / Clarifications
+
+* "No additional structures" - does that mean one instance of a string, or multiple strings are allowed? what does this mean? Let's assume we can use strings.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Approach
+
+#### Brute Force
+
+1. For each characer in string s, iterate through the rest of the characters. if the characters are equal, return false, else continue. if we get through the whole string, return true
+   * O(n^2)
+
+Best case would be O(n)... let's try for something better
+
+#### Character counting
+
+1. iterate through the string, adding to a Hash table like {character, count}, incrementing count. If we hit a collision in the map, return false, otherwise we should be able to get to n and return true.
+
+## Examples
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment.Fixtures do
+  use ExUnit.CaseTemplate
+
+  setup _context do
+    %{
+      example_false: "example",
+      example_true: "abcdefg",
+      edge_empty: "",
+      edge_nil: nil
+    }
+  end
+end
+```
+
+## Implementation
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Assignment do
+  def run(string) when is_binary(string) do
+    result =
+      string
+      |> String.graphemes()
+      |> Enum.reduce_while(%{}, fn i, acc ->
+        value = acc[i]
+
+        case value do
+          nil -> {:cont, Map.put(acc, i, true)}
+          _ -> {:halt, false}
+        end
+      end)
+
+    case result do
+      false -> false
+      _ -> true
+    end
+  end
+end
+```
+
+## Testing
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Test.Assignment do
+  import Assignment
+  use ExUnit.Case, async: true
+  use Assignment.Fixtures
+
+  describe "Assignment.run/1" do
+    test "it returns false for duplicates", %{example_false: example_false} do
+      assert run(example_false) == false
+    end
+
+    test "it returns true for no duplicates", %{example_true: example_true} do
+      assert run(example_true) == true
+    end
+
+    test "it returns true for empty", %{edge_empty: edge_empty} do
+      assert run(edge_empty) == true
+    end
+
+    test "it raises when nil", %{edge_nil: edge_nil} do
+      assert_raise FunctionClauseError, "no function clause matching in Assignment.run/1", fn ->
+        run(edge_nil)
+      end
+    end
+  end
+end
+
+ExUnit.run()
+```
+
+## Retrospective
+
+### Timeline
+
+| Start Time | End Time | Total Time |
+| ---------- | -------- | ---------- |
+| 9:30       | 10:57    | 1:27       |
+
+### Results / Feedback
+
+* 42 minutes over, searching for how to add a guard (use parenthesis around function parameters)
+* ignored the "no extra data structures", but identified half-way through implementation the hashmap was unecessary
+* didn't add testcases out the gate (midway through implementation)
+  *
